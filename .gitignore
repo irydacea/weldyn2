@@ -14,3 +14,4 @@ docs
 *.diff
 *.reject
 *.orig
+ext/*
