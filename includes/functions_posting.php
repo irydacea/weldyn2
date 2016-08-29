@@ -19,6 +19,11 @@ if (!defined('IN_PHPBB'))
 	exit;
 }
 
+// wesnoth mod begin
+define('WESNOTH_BEYOND_LIMITS_GID', 6645);
+define('WESNOTH_BEYOND_LIMITS_ATTACHMENT_LIMIT', 52428800); // bytes
+// wesnoth mod end
+
 /**
 * Fill smiley templates (or just the variables) with smilies, either in a window or inline
 */
@@ -463,6 +468,14 @@ function upload_attachment($form_name, $forum_id, $local = false, $local_storage
 		else
 		{
 			$allowed_filesize = ($is_message) ? $config['max_filesize_pm'] : $config['max_filesize'];
+
+			// wesnoth mod begin
+			include_once($phpbb_root_path . 'includes/functions_user.' . $phpEx);
+			if (group_memberships(WESNOTH_BEYOND_LIMITS_GID, $user->data['user_id'], true))
+			{
+				$allowed_filesize = WESNOTH_BEYOND_LIMITS_ATTACHMENT_LIMIT;
+			}
+			// wesnoth mod end
 		}
 
 		$file->upload->set_max_filesize($allowed_filesize);
