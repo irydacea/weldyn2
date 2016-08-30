@@ -317,7 +317,9 @@ $lang = array_merge($lang, array(
 		1	=> '%d guest',
 		2	=> '%d guests',
 	),
-	'G_ADMINISTRATORS'			=> 'Administrators',
+	// Wesnoth mod begin: Administrators -> Forum Administrators
+	'G_ADMINISTRATORS'			=> 'Forum Administrators',
+	// Wesnoth mod end
 	'G_BOTS'					=> 'Bots',
 	'G_GUESTS'					=> 'Guests',
 	'G_REGISTERED'				=> 'Registered users',
