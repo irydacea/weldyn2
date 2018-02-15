@@ -59,19 +59,17 @@ abstract class Kernel implements KernelInterface, TerminableInterface
     protected $startTime;
     protected $loadClassCache;
 
-    const VERSION = '2.8.14';
-    const VERSION_ID = 20814;
+    const VERSION = '2.8.32';
+    const VERSION_ID = 20832;
     const MAJOR_VERSION = 2;
     const MINOR_VERSION = 8;
-    const RELEASE_VERSION = 14;
+    const RELEASE_VERSION = 32;
     const EXTRA_VERSION = '';
 
     const END_OF_MAINTENANCE = '11/2018';
     const END_OF_LIFE = '11/2019';
 
     /**
-     * Constructor.
-     *
      * @param string $environment The environment
      * @param bool   $debug       Whether to enable debugging or not
      */
@@ -303,6 +301,9 @@ abstract class Kernel implements KernelInterface, TerminableInterface
     {
         if (null === $this->name) {
             $this->name = preg_replace('/[^a-zA-Z0-9_]+/', '', basename($this->rootDir));
+            if (ctype_digit($this->name[0])) {
+                $this->name = '_'.$this->name;
+            }
         }
 
         return $this->name;
@@ -532,8 +533,15 @@ abstract class Kernel implements KernelInterface, TerminableInterface
     protected function getKernelParameters()
     {
         $bundles = array();
+        $bundlesMetadata = array();
+
         foreach ($this->bundles as $name => $bundle) {
             $bundles[$name] = get_class($bundle);
+            $bundlesMetadata[$name] = array(
+                'parent' => $bundle->getParent(),
+                'path' => $bundle->getPath(),
+                'namespace' => $bundle->getNamespace(),
+            );
         }
 
         return array_merge(
@@ -545,6 +553,7 @@ abstract class Kernel implements KernelInterface, TerminableInterface
                 'kernel.cache_dir' => realpath($this->getCacheDir()) ?: $this->getCacheDir(),
                 'kernel.logs_dir' => realpath($this->getLogDir()) ?: $this->getLogDir(),
                 'kernel.bundles' => $bundles,
+                'kernel.bundles_metadata' => $bundlesMetadata,
                 'kernel.charset' => $this->getCharset(),
                 'kernel.container_class' => $this->getContainerClass(),
             ),
@@ -606,8 +615,6 @@ abstract class Kernel implements KernelInterface, TerminableInterface
 
     /**
      * Prepares the ContainerBuilder before it is compiled.
-     *
-     * @param ContainerBuilder $container A ContainerBuilder instance
      */
     protected function prepareContainer(ContainerBuilder $container)
     {
@@ -671,8 +678,6 @@ abstract class Kernel implements KernelInterface, TerminableInterface
     /**
      * Returns a loader for the container.
      *
-     * @param ContainerInterface $container The service container
-     *
      * @return DelegatingLoader The loader
      */
     protected function getContainerLoader(ContainerInterface $container)
@@ -719,7 +724,7 @@ abstract class Kernel implements KernelInterface, TerminableInterface
                 do {
                     $token = $tokens[++$i];
                     $output .= isset($token[1]) && 'b"' !== $token ? $token[1] : $token;
-                } while ($token[0] !== T_END_HEREDOC);
+                } while (T_END_HEREDOC !== $token[0]);
                 $rawChunk = '';
             } elseif (T_WHITESPACE === $token[0]) {
                 if ($ignoreSpace) {
@@ -744,7 +749,7 @@ abstract class Kernel implements KernelInterface, TerminableInterface
 
         $output .= $rawChunk;
 
-        if (PHP_VERSION_ID >= 70000) {
+        if (\PHP_VERSION_ID >= 70000) {
             // PHP 7 memory manager will not release after token_get_all(), see https://bugs.php.net/70098
             unset($tokens, $rawChunk);
             gc_mem_caches();

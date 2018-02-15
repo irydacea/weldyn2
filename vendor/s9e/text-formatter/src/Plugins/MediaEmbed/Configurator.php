@@ -2,7 +2,7 @@
 
 /*
 * @package   s9e\TextFormatter
-* @copyright Copyright (c) 2010-2016 The s9e Authors
+* @copyright Copyright (c) 2010-2017 The s9e Authors
 * @license   http://www.opensource.org/licenses/mit-license.php The MIT License
 */
 namespace s9e\TextFormatter\Plugins\MediaEmbed;
@@ -10,7 +10,6 @@ use InvalidArgumentException;
 use RuntimeException;
 use s9e\TextFormatter\Configurator\Helpers\RegexpBuilder;
 use s9e\TextFormatter\Configurator\Items\Attribute;
-use s9e\TextFormatter\Configurator\Items\AttributeFilters\RegexpFilter;
 use s9e\TextFormatter\Configurator\Items\AttributePreprocessor;
 use s9e\TextFormatter\Configurator\Items\Tag;
 use s9e\TextFormatter\Plugins\ConfiguratorBase;
@@ -19,12 +18,13 @@ use s9e\TextFormatter\Plugins\MediaEmbed\Configurator\Collections\SiteCollection
 use s9e\TextFormatter\Plugins\MediaEmbed\Configurator\TemplateBuilder;
 class Configurator extends ConfiguratorBase
 {
-	public $allowedFilters = array(
+	public $allowedFilters = [
 		'hexdec',
+		'stripslashes',
 		'urldecode'
-	);
+	];
 	protected $appendTemplate = '';
-	protected $captureURLs = \true;
+	public $captureURLs = \true;
 	protected $collection;
 	protected $createMediaBBCode = \true;
 	public $createIndividualBBCodes = \false;
@@ -40,17 +40,17 @@ class Configurator extends ConfiguratorBase
 		$tag->rules->denyChild($this->tagName);
 		$tag->filterChain->clear();
 		$tag->filterChain
-		    ->append(array(__NAMESPACE__ . '\\Parser', 'filterTag'))
+		    ->append([__NAMESPACE__ . '\\Parser', 'filterTag'])
 		    ->addParameterByName('parser')
 		    ->addParameterByName('mediasites')
 		    ->setJS(\file_get_contents(__DIR__ . '/Parser/tagFilter.js'));
 		if ($this->createMediaBBCode)
 			$this->configurator->BBCodes->set(
 				$this->tagName,
-				array(
-					'contentAttributes' => array('url'),
+				[
+					'contentAttributes' => ['url'],
 					'defaultAttribute'  => 'site'
-				)
+				]
 			);
 		if (!isset($this->defaultSites))
 			$this->defaultSites = new CachedDefinitionCollection;
@@ -64,34 +64,32 @@ class Configurator extends ConfiguratorBase
 		$schemes = $this->getSchemes();
 		if (!empty($schemes))
 			$regexp = '(?>' . RegexpBuilder::fromList($schemes) . ':|' . $regexp . ')';
-		return array(
+		return [
 			'quickMatch' => (empty($schemes)) ? '://' : ':',
 			'regexp'     => '/\\b' . $regexp . '[^["\'\\s]+/Si',
 			'tagName'    => $this->tagName
-		);
+		];
 	}
 	public function add($siteId, array $siteConfig = \null)
 	{
 		$siteId = $this->normalizeId($siteId);
-		if (!isset($siteConfig))
-			$siteConfig = $this->defaultSites->get($siteId);
+		$siteConfig = (isset($siteConfig)) ? $this->defaultSites->normalizeValue($siteConfig) : $this->defaultSites->get($siteId);
 		$this->collection[$siteId] = $siteConfig;
 		$tag = new Tag;
+		$tag->rules->allowChild('URL');
 		$tag->rules->autoClose();
 		$tag->rules->denyChild($siteId);
 		$tag->rules->denyChild($this->tagName);
-		$attributes = array(
-			'url' => array('type' => 'url')
-		);
-		if (isset($siteConfig['scrape']))
-			$attributes += $this->addScrapes($tag, $siteConfig['scrape']);
-		if (isset($siteConfig['extract']))
-			foreach ((array) $siteConfig['extract'] as $regexp)
-			{
-				$attrRegexps = $tag->attributePreprocessors->add('url', $regexp)->getAttributes();
-				foreach ($attrRegexps as $attrName => $attrRegexp)
-					$attributes[$attrName]['regexp'] = $attrRegexp;
-			}
+		$attributes = [
+			'url' => ['type' => 'url']
+		];
+		$attributes += $this->addScrapes($tag, $siteConfig['scrape']);
+		foreach ($siteConfig['extract'] as $regexp)
+		{
+			$attrRegexps = $tag->attributePreprocessors->add('url', $regexp)->getAttributes();
+			foreach ($attrRegexps as $attrName => $attrRegexp)
+				$attributes[$attrName]['regexp'] = $attrRegexp;
+		}
 		if (isset($siteConfig['attributes']))
 			foreach ($siteConfig['attributes'] as $attrName => $attrConfig)
 				foreach ($attrConfig as $configName => $configValue)
@@ -99,24 +97,7 @@ class Configurator extends ConfiguratorBase
 		$hasRequiredAttribute = \false;
 		foreach ($attributes as $attrName => $attrConfig)
 		{
-			$attribute = $tag->attributes->add($attrName);
-			if (isset($attrConfig['preFilter']))
-				$this->appendFilter($attribute, $attrConfig['preFilter']);
-			if (isset($attrConfig['type']))
-			{
-				$filter = $this->configurator->attributeFilters['#' . $attrConfig['type']];
-				$attribute->filterChain->append($filter);
-			}
-			elseif (isset($attrConfig['regexp']))
-				$attribute->filterChain->append(new RegexpFilter($attrConfig['regexp']));
-			if (isset($attrConfig['required']))
-				$attribute->required = $attrConfig['required'];
-			else
-				$attribute->required = ($attrName === 'id');
-			if (isset($attrConfig['postFilter']))
-				$this->appendFilter($attribute, $attrConfig['postFilter']);
-			if (isset($attrConfig['defaultValue']))
-				$attribute->defaultValue = $attrConfig['defaultValue'];
+			$attribute = $this->addAttribute($tag, $attrName, $attrConfig);
 			$hasRequiredAttribute |= $attribute->required;
 		}
 		if (isset($attributes['id']['regexp']))
@@ -126,7 +107,7 @@ class Configurator extends ConfiguratorBase
 		}
 		if (!$hasRequiredAttribute)
 			$tag->filterChain
-				->append(array(__NAMESPACE__ . '\\Parser', 'hasNonDefaultAttribute'))
+				->append([__NAMESPACE__ . '\\Parser', 'hasNonDefaultAttribute'])
 				->setJS(\file_get_contents(__DIR__ . '/Parser/hasNonDefaultAttribute.js'));
 		$tag->template = $this->templateBuilder->build($siteId, $siteConfig) . $this->appendTemplate;
 		$this->configurator->templateNormalizer->normalizeTag($tag);
@@ -135,10 +116,10 @@ class Configurator extends ConfiguratorBase
 		if ($this->createIndividualBBCodes)
 			$this->configurator->BBCodes->add(
 				$siteId,
-				array(
+				[
 					'defaultAttribute'  => 'url',
-					'contentAttributes' => array('url')
-				)
+					'contentAttributes' => ['url']
+				]
 			);
 		return $tag;
 	}
@@ -146,16 +127,36 @@ class Configurator extends ConfiguratorBase
 	{
 		$this->appendTemplate = $this->configurator->templateNormalizer->normalizeTemplate($template);
 	}
+	protected function addAttribute(Tag $tag, $attrName, array $attrConfig)
+	{
+		$attribute = $tag->attributes->add($attrName);
+		if (isset($attrConfig['preFilter']))
+			$this->appendFilter($attribute, $attrConfig['preFilter']);
+		if (isset($attrConfig['type']))
+		{
+			$filter = $this->configurator->attributeFilters['#' . $attrConfig['type']];
+			$attribute->filterChain->append($filter);
+		}
+		elseif (isset($attrConfig['regexp']))
+			$attribute->filterChain->append('#regexp')->setRegexp($attrConfig['regexp']);
+		if (isset($attrConfig['required']))
+			$attribute->required = $attrConfig['required'];
+		else
+			$attribute->required = ($attrName === 'id');
+		if (isset($attrConfig['postFilter']))
+			$this->appendFilter($attribute, $attrConfig['postFilter']);
+		if (isset($attrConfig['defaultValue']))
+			$attribute->defaultValue = $attrConfig['defaultValue'];
+		return $attribute;
+	}
 	protected function addScrapes(Tag $tag, array $scrapes)
 	{
-		if (!isset($scrapes[0]))
-			$scrapes = array($scrapes);
-		$attributes   = array();
-		$scrapeConfig = array();
+		$attributes   = [];
+		$scrapeConfig = [];
 		foreach ($scrapes as $scrape)
 		{
-			$attrNames = array();
-			foreach ((array) $scrape['extract'] as $extractRegexp)
+			$attrNames = [];
+			foreach ($scrape['extract'] as $extractRegexp)
 			{
 				$attributePreprocessor = new AttributePreprocessor($extractRegexp);
 				foreach ($attributePreprocessor->getAttributes() as $attrName => $attrRegexp)
@@ -166,9 +167,7 @@ class Configurator extends ConfiguratorBase
 			}
 			$attrNames = \array_unique($attrNames);
 			\sort($attrNames);
-			if (!isset($scrape['match']))
-				$scrape['match'] = '//';
-			$entry = array($scrape['match'], $scrape['extract'], $attrNames);
+			$entry = [$scrape['match'], $scrape['extract'], $attrNames];
 			if (isset($scrape['url']))
 				$entry[] = $scrape['url'];
 			$scrapeConfig[] = $entry;
@@ -188,7 +187,7 @@ class Configurator extends ConfiguratorBase
 	}
 	protected function getSchemes()
 	{
-		$schemes = array();
+		$schemes = [];
 		foreach ($this->collection as $site)
 			if (isset($site['scheme']))
 				foreach ((array) $site['scheme'] as $scheme)

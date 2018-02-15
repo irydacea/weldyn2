@@ -369,21 +369,22 @@ class XmlFileLoader extends FileLoader
                 $arg->setAttribute('key', $arg->getAttribute('name'));
             }
 
-            if (!$arg->hasAttribute('key')) {
-                $key = !$arguments ? 0 : max(array_keys($arguments)) + 1;
-            } else {
-                $key = $arg->getAttribute('key');
-            }
-
-            // parameter keys are case insensitive
-            if ('parameter' == $name && $lowercase) {
-                $key = strtolower($key);
-            }
-
             // this is used by DefinitionDecorator to overwrite a specific
             // argument of the parent definition
             if ($arg->hasAttribute('index')) {
                 $key = 'index_'.$arg->getAttribute('index');
+            } elseif (!$arg->hasAttribute('key')) {
+                // Append an empty argument, then fetch its key to overwrite it later
+                $arguments[] = null;
+                $keys = array_keys($arguments);
+                $key = array_pop($keys);
+            } else {
+                $key = $arg->getAttribute('key');
+
+                // parameter keys are case insensitive
+                if ('parameter' == $name && $lowercase) {
+                    $key = strtolower($key);
+                }
             }
 
             switch ($arg->getAttribute('type')) {
@@ -436,7 +437,7 @@ class XmlFileLoader extends FileLoader
     {
         $children = array();
         foreach ($node->childNodes as $child) {
-            if ($child instanceof \DOMElement && $child->localName === $name && $child->namespaceURI === self::NS) {
+            if ($child instanceof \DOMElement && $child->localName === $name && self::NS === $child->namespaceURI) {
                 $children[] = $child;
             }
         }
@@ -555,7 +556,7 @@ EOF
     private function loadFromExtensions(\DOMDocument $xml)
     {
         foreach ($xml->documentElement->childNodes as $node) {
-            if (!$node instanceof \DOMElement || $node->namespaceURI === self::NS) {
+            if (!$node instanceof \DOMElement || self::NS === $node->namespaceURI) {
                 continue;
             }
 
@@ -569,7 +570,7 @@ EOF
     }
 
     /**
-     * Converts a \DomElement object to a PHP array.
+     * Converts a \DOMElement object to a PHP array.
      *
      * The following rules applies during the conversion:
      *
@@ -583,7 +584,7 @@ EOF
      *
      *  * The nested-tags are converted to keys (<foo><foo>bar</foo></foo>)
      *
-     * @param \DomElement $element A \DomElement instance
+     * @param \DOMElement $element A \DOMElement instance
      *
      * @return array A PHP array
      */

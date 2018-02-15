@@ -478,7 +478,7 @@ class manager
 						'type'	=> $type,
 						'id'	=> $type->get_type(),
 						'lang'	=> 'NOTIFICATION_TYPE_' . strtoupper($type->get_type()),
-						'group' => 'NOTIFICATION_GROUP_MISCELLANEOUS',
+						'group'	=> 'NOTIFICATION_GROUP_MISCELLANEOUS',
 					), (($type::$notification_option !== false) ? $type::$notification_option : array()));
 
 					$this->subscription_types[$options['group']][$options['id']] = $options;

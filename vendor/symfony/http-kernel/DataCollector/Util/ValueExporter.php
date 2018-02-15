@@ -20,8 +20,8 @@ class ValueExporter
      * Converts a PHP value to a string.
      *
      * @param mixed $value The PHP value
-     * @param int   $depth only for internal usage
-     * @param bool  $deep  only for internal usage
+     * @param int   $depth Only for internal usage
+     * @param bool  $deep  Only for internal usage
      *
      * @return string The string representation of the given value
      */
@@ -33,7 +33,7 @@ class ValueExporter
 
         if (is_object($value)) {
             if ($value instanceof \DateTime || $value instanceof \DateTimeInterface) {
-                return sprintf('Object(%s) - %s', get_class($value), $value->format(\DateTime::ISO8601));
+                return sprintf('Object(%s) - %s', get_class($value), $value->format(\DateTime::ATOM));
             }
 
             return sprintf('Object(%s)', get_class($value));

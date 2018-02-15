@@ -13,7 +13,6 @@ namespace Symfony\Bridge\ProxyManager\LazyProxy\PhpDumper;
 
 use ProxyManager\Generator\ClassGenerator;
 use ProxyManager\GeneratorStrategy\BaseGeneratorStrategy;
-use ProxyManager\ProxyGenerator\LazyLoadingValueHolderGenerator;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Definition;
@@ -26,24 +25,11 @@ use Symfony\Component\DependencyInjection\LazyProxy\PhpDumper\DumperInterface;
  */
 class ProxyDumper implements DumperInterface
 {
-    /**
-     * @var string
-     */
     private $salt;
-
-    /**
-     * @var LazyLoadingValueHolderGenerator
-     */
     private $proxyGenerator;
-
-    /**
-     * @var BaseGeneratorStrategy
-     */
     private $classGenerator;
 
     /**
-     * Constructor.
-     *
      * @param string $salt
      */
     public function __construct($salt = '')
@@ -109,13 +95,15 @@ EOF;
      */
     public function getProxyCode(Definition $definition)
     {
-        return $this->classGenerator->generate($this->generateProxyClass($definition));
+        return preg_replace(
+            '/(\$this->initializer[0-9a-f]++) && \1->__invoke\(\$this->(valueHolder[0-9a-f]++), (.*?), \1\);/',
+            '$1 && ($1->__invoke(\$$2, $3, $1) || 1) && $this->$2 = \$$2;',
+            $this->classGenerator->generate($this->generateProxyClass($definition))
+        );
     }
 
     /**
      * Produces the proxy class name for the given definition.
-     *
-     * @param Definition $definition
      *
      * @return string
      */
@@ -125,8 +113,6 @@ EOF;
     }
 
     /**
-     * @param Definition $definition
-     *
      * @return ClassGenerator
      */
     private function generateProxyClass(Definition $definition)

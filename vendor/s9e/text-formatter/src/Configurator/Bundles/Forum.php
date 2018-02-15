@@ -2,7 +2,7 @@
 
 /*
 * @package   s9e\TextFormatter
-* @copyright Copyright (c) 2010-2016 The s9e Authors
+* @copyright Copyright (c) 2010-2017 The s9e Authors
 * @license   http://www.opensource.org/licenses/mit-license.php The MIT License
 */
 namespace s9e\TextFormatter\Configurator\Bundles;
@@ -25,16 +25,16 @@ class Forum extends Bundle
 		$configurator->BBCodes->addFromRepository('*');
 		$configurator->BBCodes->add('LI');
 		$configurator->BBCodes->addFromRepository('OL');
-		$configurator->BBCodes->addFromRepository('QUOTE', 'default', array(
+		$configurator->BBCodes->addFromRepository('QUOTE', 'default', [
 			'authorStr' => '<xsl:value-of select="@author"/> <xsl:value-of select="$L_WROTE"/>'
-		));
+		]);
 		$configurator->BBCodes->addFromRepository('S');
 		$configurator->BBCodes->addFromRepository('SIZE');
-		$configurator->BBCodes->addFromRepository('SPOILER', 'default', array(
+		$configurator->BBCodes->addFromRepository('SPOILER', 'default', [
 			'hideStr'    => '{L_HIDE}',
 			'showStr'    => '{L_SHOW}',
 			'spoilerStr' => '{L_SPOILER}',
-		));
+		]);
 		$configurator->BBCodes->addFromRepository('TABLE');
 		$configurator->BBCodes->addFromRepository('TD');
 		$configurator->BBCodes->addFromRepository('TH');
@@ -42,13 +42,13 @@ class Forum extends Bundle
 		$configurator->BBCodes->addFromRepository('U');
 		$configurator->BBCodes->addFromRepository('UL');
 		$configurator->BBCodes->addFromRepository('URL');
-		$configurator->rendering->parameters = array(
+		$configurator->rendering->parameters = [
 			'L_WROTE'   => 'wrote:',
 			'L_HIDE'    => 'Hide',
 			'L_SHOW'    => 'Show',
 			'L_SPOILER' => 'Spoiler'
-		);
-		$emoticons = array(
+		];
+		$emoticons = [
 			':)'  => '1F642',
 			':-)' => '1F642',
 			';)'  => '1F609',
@@ -72,7 +72,7 @@ class Forum extends Bundle
 			':-|' => '1F610',
 			':o'  => '1F62E',
 			':lol:' => '1F602'
-		);
+		];
 		foreach ($emoticons as $code => $hex)
 			$configurator->Emoji->addAlias($code, \html_entity_decode('&#x' . $hex . ';'));
 		$configurator->MediaEmbed->createIndividualBBCodes = \true;

@@ -2,7 +2,7 @@
 
 /*
 * @package   s9e\TextFormatter
-* @copyright Copyright (c) 2010-2016 The s9e Authors
+* @copyright Copyright (c) 2010-2017 The s9e Authors
 * @license   http://www.opensource.org/licenses/mit-license.php The MIT License
 */
 namespace s9e\TextFormatter\Plugins\MediaEmbed;
@@ -44,18 +44,33 @@ class Parser extends ParserBase
 		if ($tag->hasAttribute('url'))
 		{
 			$url = $tag->getAttribute('url');
-			if (\preg_match('#^https?://[^<>"\'\\s]+$#D', $url))
+			if (\preg_match('#^https?://[^<>"\'\\s]+$#Di', $url))
+			{
+				$url = \strtolower(\substr($url, 0, 5)) . \substr($url, 5);
 				foreach ($scrapeConfig as $scrape)
 					self::scrapeEntry($url, $tag, $scrape, $cacheDir);
+			}
 		}
 		return \true;
 	}
 	protected static function addSiteTag(Tag $tag, TagStack $tagStack, $siteId)
 	{
-		$endTag = $tag->getEndTag() ?: $tag;
-		$lpos = $tag->getPos();
-		$rpos = $endTag->getPos() + $endTag->getLen();
-		$tagStack->addTagPair(\strtoupper($siteId), $lpos, 0, $rpos, 0, $tag->getSortPriority())->setAttributes($tag->getAttributes());
+		$endTag = $tag->getEndTag();
+		if ($endTag)
+		{
+			$startPos = $tag->getPos();
+			$startLen = $tag->getLen();
+			$endPos   = $endTag->getPos();
+			$endLen   = $endTag->getLen();
+		}
+		else
+		{
+			$startPos = $tag->getPos();
+			$startLen = 0;
+			$endPos   = $tag->getPos() + $tag->getLen();
+			$endLen   = 0;
+		}
+		$tagStack->addTagPair(\strtoupper($siteId), $startPos, $startLen, $endPos, $endLen, $tag->getSortPriority())->setAttributes($tag->getAttributes());
 	}
 	protected static function addTagFromMediaId(Tag $tag, TagStack $tagStack, array $sites)
 	{
@@ -110,7 +125,7 @@ class Parser extends ParserBase
 		list($matchRegexps, $extractRegexps, $attrNames) = $scrape;
 		if (!self::tagIsMissingAnyAttribute($tag, $attrNames))
 			return;
-		$vars    = array();
+		$vars    = [];
 		$matched = \false;
 		foreach ((array) $matchRegexps as $matchRegexp)
 			if (\preg_match($matchRegexp, $url, $m))
@@ -155,7 +170,7 @@ class Parser extends ParserBase
 			if (\file_exists($cacheFile))
 				return \file_get_contents($prefix . $cacheFile);
 		}
-		$content = @self::getHttpClient()->get($url, array('User-Agent: PHP (not Mozilla)'));
+		$content = @self::getHttpClient()->get($url, ['User-Agent: PHP (not Mozilla)']);
 		if (isset($cacheFile) && !empty($content))
 			\file_put_contents($prefix . $cacheFile, $content);
 		return $content;

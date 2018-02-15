@@ -2,7 +2,7 @@
 
 /*
 * @package   s9e\TextFormatter
-* @copyright Copyright (c) 2010-2016 The s9e Authors
+* @copyright Copyright (c) 2010-2017 The s9e Authors
 * @license   http://www.opensource.org/licenses/mit-license.php The MIT License
 */
 namespace s9e\TextFormatter\Configurator\JavaScript;
@@ -16,7 +16,7 @@ class HintGenerator
 	protected $xsl;
 	public function getHints()
 	{
-		$this->hints = array();
+		$this->hints = [];
 		$this->setPluginsHints();
 		$this->setRenderingHints();
 		$this->setRulesHints();
@@ -47,6 +47,7 @@ class HintGenerator
 	protected function setRenderingHints()
 	{
 		$this->hints['postProcessing'] = (int) (\strpos($this->xsl, 'data-s9e-livepreview-postprocess') !== \false);
+		$this->hints['ignoreAttrs']    = (int) (\strpos($this->xsl, 'data-s9e-livepreview-ignore-attrs') !== \false);
 	}
 	protected function setRulesHints()
 	{

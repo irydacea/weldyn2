@@ -2,7 +2,7 @@
 
 /*
 * @package   s9e\TextFormatter
-* @copyright Copyright (c) 2010-2016 The s9e Authors
+* @copyright Copyright (c) 2010-2017 The s9e Authors
 * @license   http://www.opensource.org/licenses/mit-license.php The MIT License
 */
 namespace s9e\TextFormatter;
@@ -10,8 +10,7 @@ use DOMDocument;
 use InvalidArgumentException;
 abstract class Renderer
 {
-	public $metaElementsRegexp = '(<[eis]>[^<]*</[eis]>)';
-	protected $params = array();
+	protected $params = [];
 	protected function loadXML($xml)
 	{
 		$this->checkUnsupported($xml);
@@ -25,7 +24,7 @@ abstract class Renderer
 		if (\substr($xml, 0, 3) === '<t>')
 			return $this->renderPlainText($xml);
 		else
-			return $this->renderRichText(\preg_replace($this->metaElementsRegexp, '', $xml));
+			return $this->renderRichText(\preg_replace('(<[eis]>[^<]*</[eis]>)', '', $xml));
 	}
 	protected function renderPlainText($xml)
 	{
