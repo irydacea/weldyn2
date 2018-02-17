@@ -14,7 +14,7 @@ parameters:
 
     # List of default password driver types
     passwords.algorithms:
+        - passwords.driver.salted_md5
         - passwords.driver.bcrypt_2y
         - passwords.driver.bcrypt
-        - passwords.driver.salted_md5
         - passwords.driver.phpass
