@@ -5,7 +5,13 @@
 /___install
 /__install
 /store
+
+# HACK: whitelist shipped phpbb/viglink extension
 /ext/*
+!/ext/phpbb
+/ext/phpbb/*
+!/ext/phpbb/viglink
+
 /files/*
 /images/*
 /images/avatars/upload/*
