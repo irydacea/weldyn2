@@ -23,3 +23,7 @@
 *.diff
 *.reject
 *.orig
+
+/.kdev4
+/.vscode
+*.kdev4
