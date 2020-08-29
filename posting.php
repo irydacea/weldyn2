@@ -40,7 +40,7 @@ $load		= (isset($_POST['load'])) ? true : false;
 $confirm	= $request->is_set_post('confirm');
 $cancel		= (isset($_POST['cancel']) && !isset($_POST['save'])) ? true : false;
 
-$refresh	= (isset($_POST['add_file']) || isset($_POST['delete_file']) || isset($_POST['cancel_unglobalise']) || $save || $load || $preview);
+$refresh	= (isset($_POST['add_file']) || isset($_POST['delete_file']) || $save || $load || $preview);
 $submit = $request->is_set_post('post') && !$refresh && !$preview;
 $mode		= $request->variable('mode', '');
 
@@ -434,7 +434,7 @@ if ($post_data['forum_type'] != FORUM_POST && in_array($mode, array('post', 'bum
 }
 
 // Forum/Topic locked?
-if (($post_data['forum_status'] == ITEM_LOCKED || (isset($post_data['topic_status']) && $post_data['topic_status'] == ITEM_LOCKED)) && !$auth->acl_get('m_edit', $forum_id))
+if (($post_data['forum_status'] == ITEM_LOCKED || (isset($post_data['topic_status']) && $post_data['topic_status'] == ITEM_LOCKED)) && !$auth->acl_get($mode == 'reply' ? 'm_lock' : 'm_edit', $forum_id))
 {
 	trigger_error(($post_data['forum_status'] == ITEM_LOCKED) ? 'FORUM_LOCKED' : 'TOPIC_LOCKED');
 }
