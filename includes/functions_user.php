@@ -1755,6 +1755,13 @@ function validate_username($username, $allowed_username = false, $allow_all_name
 
 	switch ($config['allow_name_chars'])
 	{
+		// wesnoth mod begin
+		// WESNOTHD HACK: added USERNAME_WESNOTHD to switch block
+		case 'USERNAME_WESNOTHD':
+			$regex = '[A-Za-z0-9_-]+';
+		break;
+		// wesnoth mod end
+
 		case 'USERNAME_CHARS_ANY':
 			$regex = '.+';
 		break;
