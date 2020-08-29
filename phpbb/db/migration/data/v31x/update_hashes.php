@@ -25,7 +25,7 @@ class update_hashes extends \phpbb\db\migration\migration
 	public function update_data()
 	{
 		return array(
-			array('config.add', array('enable_update_hashes', '1')),
+			array('config.add', array('enable_update_hashes', '0')),
 			array('config.add', array('update_hashes_lock', '')),
 			array('config.add', array('update_hashes_last_cron', '0'))
 		);
